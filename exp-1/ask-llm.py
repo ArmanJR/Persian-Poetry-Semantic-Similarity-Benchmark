@@ -10,9 +10,9 @@ import re
 load_dotenv(dotenv_path="../.env")
 
 # --- Configuration ---
-JSON_FILE_PATH = "data/questions.json"  # Path to your exam JSON file
+JSON_FILE_PATH = "data/few-shot-questions.json"  # Path to questions (zero-shot and few-shot questions are different)
 LOG_FILE_PATH = "results.log"  # Path to save the detailed logs
-CSV_RESULT_FILE_PATH = "answers.csv" # Path for the results CSV file
+CSV_RESULT_FILE_PATH = "few-shot/few-shot-answers.csv" # Path for the results CSV file
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") # Get API key from environment variable
 
 # List of models to test (use the exact identifiers from OpenRouter)
@@ -30,6 +30,47 @@ MODELS_TO_TEST = [
     "google/gemma-3-12b-it",
     "qwen/qwen-2.5-72b-instruct",
 ]
+
+# Zero-shot
+#SYSTEM_PROMPT="You are an AI assistant analyzing Persian poetry couplets. Identify the outlier based on concept/message. Respond *only* with the single digit number (1, 2, 3, or 4) of the outlier option. Output nothing else."
+
+# Few-shot
+SYSTEM_PROMPT="""You are an expert literary critic with a deep understanding of Persian poetry, its cultural nuances, and its stylistic features. Your task is to analyze a set of poetic options—each option presenting two parts of a couplet—and identify the one option that deviates in conceptual meaning or thematic message from the others. Focus exclusively on the underlying concepts, disregarding stylistic or linguistic differences.
+
+For example:
+
+---
+Options:
+1. طریق عشق پرآشوب و فتنه است ای دل - بیفتد آن که در این راه با شتاب رود
+2. گر نور عشق حق به دل و جانت اوفتد - بالله از آفتاب فلک خوبتر شوی
+3. شکوه عشق نگه کن که موی مجنون را - فلک به شعشعه آفتاب، شانه کند
+4. فرزانه درآید به پری خانه مقصود - هر کس که در این بادیه دیوانه عشق است
+
+Correct answer: 1
+
+(Option 1 warns against hastily pursuing the turbulent path of love, whereas the other options present love as an uplifting force)
+
+---
+Options:
+1. شمشیر نیک از آهن بد چون کند کسی؟ - ناکس تربیت نشود ای حکیم کس
+2. سگ به دریای هفت گانه بشوی - که چو تر شد پلیدتر باشد
+3. ز وحشی نیاید که مردم شود - به سعی اندر او تربیت گم شود
+4. سگ اصحاب کهف روزی چند - پی نیکان گرفت و مردم شد
+
+Correct answer: 4
+
+(Option 4 emphasizes the significant impact of upbringing, unlike the other options which imply that upbringing makes little difference)
+
+---
+Options:
+1. هر چند خوشگوار بود باده غرور - زین می فزون از سنگ نگه دار شیشه را
+2. از ساده دلی هر که دهد پند به مغرور - بیدار به افسانه کند خواب گران را
+3. کبر مفروش به مردم که به میزان نظر - زود گردد سبک آن کس که بود سنگین تر
+4. خاک بر فرقش اگر از کبر سر بالا کند - هر که داند بازگشت او به غیر از خاک نیست
+
+Correct answer: 2
+
+(The meaning of option 2 is the ineffectiveness of giving advice to the arrogant, while the common meaning of the other options is the recommendation to avoid arrogance)"""
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -108,7 +149,7 @@ def get_model_response(client, model_id, prompt):
         completion = client.chat.completions.create(
             model=model_id,
             messages=[
-                {"role": "system", "content": "You are an AI assistant analyzing Persian poetry couplets. Identify the outlier based on concept/message. Respond *only* with the single digit number (1, 2, 3, or 4) of the outlier option. Output nothing else."},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
             stream=False,
