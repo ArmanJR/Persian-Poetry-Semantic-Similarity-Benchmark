@@ -1,0 +1,15 @@
+Model Name,Accuracy (%)
+PartAI/Tooka-SBERT,41.46341463414634
+HooshvareLab/bert-base-parsbert-uncased,39.02439024390244
+BAAI/bge-m3,39.02439024390244
+intfloat/multilingual-e5-large,39.02439024390244
+sentence-transformers/paraphrase-multilingual-mpnet-base-v2,36.58536585365854
+sentence-transformers/LaBSE,36.58536585365854
+intfloat/multilingual-e5-small,36.58536585365854
+Snowflake/snowflake-arctic-embed-l-v2.0,29.268292682926827
+HooshvareLab/bert-fa-zwnj-base,26.82926829268293
+HooshvareLab/bert-fa-base-uncased,26.82926829268293
+myrkur/sentence-transformer-parsbert-fa,26.82926829268293
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2,21.951219512195124
+sentence-transformers/all-MiniLM-L6-v2,17.073170731707318
+antoinelouis/colbert-xm,17.073170731707318

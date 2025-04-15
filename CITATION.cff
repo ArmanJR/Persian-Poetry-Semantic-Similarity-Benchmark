@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this dataset or code, please cite it as below."
+authors:
+  - family-names: "Jafarnezhad"
+    given-names: "Arman"
+title: "Persian Poetry Semantic Similarity Benchmark"
+version: "1.0.0"
+date-released: 2025-04-15
+url: "https://github.com/ArmanJR/Persian-Poetry-Semantic-Similarity-Benchmark"
+type: dataset

@@ -105,3 +105,74 @@ Here’s how the models performed, ranked by accuracy (percentage of correct out
 
 
 ![Bar chart visualization goes here](exp-1/few-shot/results.png)
+
+---
+
+## Experiment #2: Benchmarking Embedding Models
+
+In this experiment, we evaluated the performance of several multilingual embedding models by testing their ability to identify the outlier in a set of 42 multiple-choice questions, each containing 4 options.
+
+For each question, we generated embeddings for the four choices and calculated the cosine similarity between each option and the centroid of the remaining three. The option with the **lowest** similarity to the rest was predicted as the outlier.
+
+Here's the core logic used for outlier detection:
+
+```python
+def find_outlier_index(embeddings):
+    """
+    Predicts the index of the outlier embedding as the one least similar to the others.
+
+    Args:
+        embeddings: A list or numpy array containing 4 embedding vectors.
+
+    Returns:
+        Index (0-3) of the predicted outlier, or -1 if input is invalid.
+    """
+    if not isinstance(embeddings, np.ndarray):
+        embeddings = np.array(embeddings)
+
+    if len(embeddings) != 4 or embeddings.ndim != 2:
+        print(f"Warning: Invalid input shape {embeddings.shape if isinstance(embeddings, np.ndarray) else 'N/A'}.")
+        return -1
+
+    similarity_scores = []
+
+    for i in range(4):
+        others = np.delete(embeddings, i, axis=0)
+        if others.size == 0:
+            similarity_scores.append(-np.inf)
+            continue
+
+        centroid = np.mean(others, axis=0, keepdims=True)
+        current = embeddings[i].reshape(1, -1)
+        similarity = cosine_similarity(current, centroid)[0][0]
+        similarity_scores.append(similarity)
+
+    if all(score == -np.inf for score in similarity_scores):
+        print("Warning: No valid similarities calculated.")
+        return -1
+
+    return int(np.argmin(similarity_scores))
+```
+
+We then evaluated the models based on their accuracy in selecting the correct outlier. For reference, random guessing yields a baseline accuracy of **25%**.
+
+![Bar chart visualization goes here](exp-2/results.png)
+
+---
+
+## Citation
+
+If you use this benchmark or dataset in your research, please cite this repository:
+
+```
+@misc{jafarnezhad_persian_poetry_2025,
+  author       = {Arman Jafarnezhad},
+  title        = {Persian Poetry Semantic Similarity Benchmark},
+  year         = {2025},
+  version      = {1.0.0},
+  url          = {https://github.com/ArmanJR/Persian-Poetry-Semantic-Similarity-Benchmark},
+  note         = {Dataset and experiments repository},
+}
+```
+
+Alternatively, you can click the "Cite this repository" button on the right sidebar of the GitHub page to get citation formats in BibTeX or APA.
