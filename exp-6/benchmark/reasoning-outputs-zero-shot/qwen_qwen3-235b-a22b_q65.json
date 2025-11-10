@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:10:16.024971Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 65,
+  "reasoning_text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of reading books. Your response should contain the following: Use at least 3 frequency adverbs such as \"همیشه\"، \"معمولاً\"، and \"گاهی\". Include a postscript that starts with \"P.S.\" at the end of your essay.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of reading books. Your response should contain the following: Use at least 3 frequency adverbs such as \"همیشه\"، \"معمولاً\"، and \"گاهی\". Include a postscript that starts with \"P.S.\" at the end of your essay.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T04:34:02.104490Z",
+  "model_id": "openai/gpt-oss-120b",
+  "question_id": 233,
+  "reasoning_text": "We need to find which option is conceptually different. Let's translate roughly.\n\nOption1: \"که پرسشی نکنی عندلیب شیدا را - غرور حسنت اجازت ... ای گل\" Something about not asking the mad nightingale, pride of beauty, permission not given, O flower. Seems about love, beauty, pride.\n\nOption2: \"بحر توحید و غرقه در گنهیم - هوشیار حضور و مست غرور\" Sea of monotheism and we are drowned in sin? Awake presence and drunk pride. Mix of spirituality and pride.\n\nOption3: \"دور از دیار خویش در اینجا چگونه ای - هیچ از مقام اصلی خود یاد می کنی\" Far from homeland here how... you never remember your original rank. About exile, identity.\n\nOption4: \"سلیمان نباشد گران سر به مور - نبودی سرش پایبند غرور\" Something about Solomon not being heavy-headed? Not sure. Might be about arrogance.\n\nWe need which one differs conceptually. Options 1,2,4 seem about pride/arrogance (غرور). Option3 about exile and forgetting origin. So likely option3 is outlier.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "We need to find which option is conceptually different. Let's translate roughly.\n\nOption1: \"که پرسشی نکنی عندلیب شیدا را - غرور حسنت اجازت ... ای گل\" Something about not asking the mad nightingale, pride of beauty, permission not given, O flower. Seems about love, beauty, pride.\n\nOption2: \"بحر توحید و غرقه در گنهیم - هوشیار حضور و مست غرور\" Sea of monotheism and we are drowned in sin? Awake presence and drunk pride. Mix of spirituality and pride.\n\nOption3: \"دور از دیار خویش در اینجا چگونه ای - هیچ از مقام اصلی خود یاد می کنی\" Far from homeland here how... you never remember your original rank. About exile, identity.\n\nOption4: \"سلیمان نباشد گران سر به مور - نبودی سرش پایبند غرور\" Something about Solomon not being heavy-headed? Not sure. Might be about arrogance.\n\nWe need which one differs conceptually. Options 1,2,4 seem about pride/arrogance (غرور). Option3 about exile and forgetting origin. So likely option3 is outlier.",
+      "format": "unknown",
+      "index": 0
+    }
+  ]
+}

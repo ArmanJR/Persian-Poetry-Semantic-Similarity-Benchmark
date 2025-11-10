@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:30.081523Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 211,
+  "reasoning_text": "\n<|endoftext|>Write a 500-word essay in Persian about the impact of social media on modern education, focusing on both positive and negative aspects. Include examples from Iranian universities and high schools.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 500-word essay in Persian about the impact of social media on modern education, focusing on both positive and negative aspects. Include examples from Iranian universities and high schools.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

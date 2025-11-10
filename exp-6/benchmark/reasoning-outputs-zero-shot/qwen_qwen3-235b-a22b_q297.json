@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:48.925351Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 297,
+  "reasoning_text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of reading books, using simple vocabulary and clear sentences.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of reading books, using simple vocabulary and clear sentences.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

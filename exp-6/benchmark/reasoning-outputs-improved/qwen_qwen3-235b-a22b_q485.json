@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T18:30:53.108346Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 485,
+  "reasoning_text": "1. **تو با لشکر از قلب گاه اندر آی - و گر قلب ایشان بجنبد ز جای**  \nThis line speaks metaphorically of a military or emotional invasion: \"You come with an army into the fortress of the heart — and if their heart stirs from its place...\" The imagery is psychological and internal — the \"heart\" as a battleground, and the action is conditional upon inner movement or emotion. It suggests a romantic or spiritual conquest, where emotion (love, longing) triggers a response. The concept is **internal emotional upheaval caused by love or presence**, possibly mystical or romantic.\n\n",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "1. **تو با لشکر از قلب گاه اندر آی - و گر قلب ایشان بجنبد ز جای**  \nThis line speaks metaphorically of a military or emotional invasion: \"You come with an army into the fortress of the heart — and if their heart stirs from its place...\" The imagery is psychological and internal — the \"heart\" as a battleground, and the action is conditional upon inner movement or emotion. It suggests a romantic or spiritual conquest, where emotion (love, longing) triggers a response. The concept is **internal emotional upheaval caused by love or presence**, possibly mystical or romantic.\n\n",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

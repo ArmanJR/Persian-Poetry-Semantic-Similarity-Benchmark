@@ -1,0 +1,24 @@
+# Persian Poetry Semantic Similarity Benchmark Dependencies
+
+# Core dependencies
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# For Experiment 1 (LLM Benchmarking)
+anthropic>=0.18.0
+openai>=1.0.0
+
+# For Experiment 2 (Local Embedding Models)
+sentence-transformers>=2.2.0
+torch>=2.0.0
+
+# For OpenRouter API (Embedding Models)
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# Optional: For progress bars
+tqdm>=4.65.0
