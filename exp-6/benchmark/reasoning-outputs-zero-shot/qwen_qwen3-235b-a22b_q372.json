@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:25.714131Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 372,
+  "reasoning_text": "\n<|endoftext|>Write a 500-word essay in Persian about the impact of social media on youth mental health, focusing on both positive and negative aspects. Include statistics from recent studies and examples of how platforms like Instagram and TikTok influence self-esteem and social behavior. Use formal academic language and provide citations in APA format.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 500-word essay in Persian about the impact of social media on youth mental health, focusing on both positive and negative aspects. Include statistics from recent studies and examples of how platforms like Instagram and TikTok influence self-esteem and social behavior. Use formal academic language and provide citations in APA format.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

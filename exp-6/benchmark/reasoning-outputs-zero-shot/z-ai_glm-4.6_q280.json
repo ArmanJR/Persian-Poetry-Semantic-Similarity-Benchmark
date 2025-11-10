@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T03:56:29.081723Z",
+  "model_id": "z-ai/glm-4.6",
+  "question_id": 280,
+  "reasoning_text": "\n",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n",
+      "format": "unknown",
+      "index": 0
+    }
+  ]
+}

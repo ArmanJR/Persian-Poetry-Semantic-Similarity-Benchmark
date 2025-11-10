@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:30.364585Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 291,
+  "reasoning_text": "\n<|endoftext|>Write a 150-word essay in English about the importance of learning a second language. Your response should contain the words \"communication\", \"opportunities\", and \"culture\" at least once.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 150-word essay in English about the importance of learning a second language. Your response should contain the words \"communication\", \"opportunities\", and \"culture\" at least once.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

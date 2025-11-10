@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:07.319346Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 307,
+  "reasoning_text": "\n<|endoftext|>Write a 500-word essay on the benefits of meditation for mental health.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 500-word essay on the benefits of meditation for mental health.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

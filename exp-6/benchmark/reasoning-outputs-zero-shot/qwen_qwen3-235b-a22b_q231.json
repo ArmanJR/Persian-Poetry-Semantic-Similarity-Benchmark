@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:02.272338Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 231,
+  "reasoning_text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of reading books, focusing on how it enhances knowledge, improves critical thinking, and fosters empathy. Use simple vocabulary and clear sentence structures suitable for a high school level. Avoid complex literary expressions.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of reading books, focusing on how it enhances knowledge, improves critical thinking, and fosters empathy. Use simple vocabulary and clear sentence structures suitable for a high school level. Avoid complex literary expressions.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

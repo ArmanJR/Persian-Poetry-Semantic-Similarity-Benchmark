@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:25.213912Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 313,
+  "reasoning_text": "\n<|endoftext|>Write a 500-word essay in Persian about the importance of preserving historical monuments. Your response should contain the following: \n- Use at least 5 complex Persian sentences.\n- Include at least 3 Persian idioms.\n- Use the word \"تاریخ\" at least 3 times.\n- Use the word \"فرهنگ\" at least 2 times.\n- End with the exact sentence: \"حفاظت از آثار تاریخی، وظیفه‌ای است که بر دوش همه ما قرار دارد.\"",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 500-word essay in Persian about the importance of preserving historical monuments. Your response should contain the following: \n- Use at least 5 complex Persian sentences.\n- Include at least 3 Persian idioms.\n- Use the word \"تاریخ\" at least 3 times.\n- Use the word \"فرهنگ\" at least 2 times.\n- End with the exact sentence: \"حفاظت از آثار تاریخی، وظیفه‌ای است که بر دوش همه ما قرار دارد.\"",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

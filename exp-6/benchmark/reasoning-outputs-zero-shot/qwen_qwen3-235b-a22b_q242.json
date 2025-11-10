@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:10.950675Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 242,
+  "reasoning_text": "\n<|endoftext|>Write a 1000-word essay on the benefits of exercise.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 1000-word essay on the benefits of exercise.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

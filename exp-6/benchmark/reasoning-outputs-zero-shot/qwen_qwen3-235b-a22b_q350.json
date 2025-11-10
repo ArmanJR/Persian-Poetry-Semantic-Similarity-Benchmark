@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:10:44.241673Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 350,
+  "reasoning_text": "\n<|endoftext|>Write a story about a lonely robot in the style of Isaac Asimov.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a story about a lonely robot in the style of Isaac Asimov.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

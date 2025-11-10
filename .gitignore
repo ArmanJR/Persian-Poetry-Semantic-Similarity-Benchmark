@@ -4,3 +4,6 @@ env
 .env
 .idea
 *.log
+openrouter_cache
+excluded
+.DS_Store

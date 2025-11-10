@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:41.563703Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 215,
+  "reasoning_text": "\n<|endoftext|>Write a brief explanation of why option 3 is different from the others.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a brief explanation of why option 3 is different from the others.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:08.550664Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 276,
+  "reasoning_text": "\n<|endoftext|>Write a 500-word essay on the benefits of regular exercise for mental health.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 500-word essay on the benefits of regular exercise for mental health.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

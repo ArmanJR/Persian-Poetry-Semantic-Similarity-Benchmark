@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:09:28.052014Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 97,
+  "reasoning_text": "\n<|endoftext|>Write a 1500-word article on the topic of \"The Role of Artificial Intelligence in Modern Education\" in Persian.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 1500-word article on the topic of \"The Role of Artificial Intelligence in Modern Education\" in Persian.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

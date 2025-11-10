@@ -1,6 +1,15 @@
 # Persian Poetry Semantic Similarity Benchmark
 
-This repository benchmarks different embedding models to assess their performance in understanding semantic similarity (قرابت معنایی) in Persian classic poetry.
+This repository benchmarks different LLM and embedding models to assess their performance in understanding semantic similarity (قرابت معنایی) in Persian classic poetry.
+
+## Experiments Overview
+
+1. **Experiment #1**: LLM quiz on 42 questions using zero-shot and few-shot prompting to identify poetry outliers
+2. **Experiment #2**: Benchmarking embedding models using centroid-based cosine similarity for outlier detection
+3. **Experiment #3**: Evaluating OpenRouter API embedding models on the same outlier detection task
+4. **Experiment #4**: Generating interpretations of poetry couplets using 13 different LLMs via OpenRouter
+5. **Experiment #5**: Testing 117 combinations of embedding models (9) and LLM explanations (13) in a 2D matrix
+6. **Experiment #6**: Large-scale benchmark of 30 LLMs on 591 questions from the Gherabat book dataset
 
 ---
 
@@ -26,10 +35,10 @@ You are an AI assistant analyzing Persian poetry couplets. Identify the outlier 
 Analyze the conceptual meaning of the following options:
 
 Options:
-1. چو در وقت بهار آیی پدیدار - حقیقت، پرده برداری ز رخسار  
-2. فروغ رویت اندازی سوی خاک - عجایب نقشها سازی سوی خاک  
-3. از جلوه وجود تو ظلمت سرای خاک - روشن تر از جمال بتان طراز باد  
-4. جلوه‌ای کرد رُخت دید ملک عشق نداشت - عین آتش شد از آن غیرت و بر آدم زد  
+1. چو در وقت بهار آیی پدیدار - حقیقت، پرده برداری ز رخسار
+2. فروغ رویت اندازی سوی خاک - عجایب نقشها سازی سوی خاک
+3. از جلوه وجود تو ظلمت سرای خاک - روشن تر از جمال بتان طراز باد
+4. جلوه‌ای کرد رُخت دید ملک عشق نداشت - عین آتش شد از آن غیرت و بر آدم زد
 
 Instruction: Identify the *single* option (by its number) that has a different concept and message from the others. Respond with *only* the number (1, 2, 3, or 4). Do not provide any explanation or other text.
 ```
@@ -91,10 +100,10 @@ Correct answer: 2
 Analyze the conceptual meaning of the following options:
 
 Options:
-1. چو در وقت بهار آیی پدیدار - حقیقت، پرده برداری ز رخسار  
-2. فروغ رویت اندازی سوی خاک - عجایب نقشها سازی سوی خاک  
-3. از جلوه وجود تو ظلمت سرای خاک - روشن تر از جمال بتان طراز باد  
-4. جلوه‌ای کرد رُخت دید ملک عشق نداشت - عین آتش شد از آن غیرت و بر آدم زد  
+1. چو در وقت بهار آیی پدیدار - حقیقت، پرده برداری ز رخسار
+2. فروغ رویت اندازی سوی خاک - عجایب نقشها سازی سوی خاک
+3. از جلوه وجود تو ظلمت سرای خاک - روشن تر از جمال بتان طراز باد
+4. جلوه‌ای کرد رُخت دید ملک عشق نداشت - عین آتش شد از آن غیرت و بر آدم زد
 
 Instruction: Identify the *single* option (by its number) that has a different concept and message from the others. Respond with *only* the number (1, 2, 3, or 4). Do not provide any explanation or other text.
 ```
@@ -157,6 +166,104 @@ def find_outlier_index(embeddings):
 We then evaluated the models based on their accuracy in selecting the correct outlier. For reference, random guessing yields a baseline accuracy of **25%**.
 
 ![Bar chart visualization goes here](exp-2/results.png)
+
+---
+
+## Experiment #3: OpenRouter Embedding Models Benchmark
+
+This experiment evaluates embedding models available through the OpenRouter API on the same outlier detection task. Unlike Experiment 2, which used locally-hosted models, this experiment tests cloud-based embeddings via API calls.
+
+The outlier detection algorithm is identical to Experiment 2 (centroid-based cosine similarity). Each model generates embeddings for the 4 poetry options, and the option with the lowest similarity to the centroid of the other three is predicted as the outlier.
+
+Results (ranked by accuracy):
+
+| Model | Accuracy (%) | Correct | Total |
+|-------|--------------|---------|-------|
+| google/gemini-embedding-001 | 39.02 | 16 | 41 |
+| openai/text-embedding-3-large | 36.59 | 15 | 41 |
+| mistralai/codestral-embed-2505 | 32.50 | 13 | 40 |
+| qwen/qwen3-embedding-0.6b | 29.27 | 12 | 41 |
+| qwen/qwen3-embedding-8b | 29.27 | 12 | 41 |
+| openai/text-embedding-3-small | 26.83 | 11 | 41 |
+| openai/text-embedding-ada-002 | 24.39 | 10 | 41 |
+| qwen/qwen3-embedding-4b | 21.95 | 9 | 41 |
+| mistralai/mistral-embed-2312 | 14.63 | 6 | 41 |
+
+---
+
+## Experiment #4: LLM-Generated Explanations
+
+This experiment generates interpretations of Persian poetry couplets using multiple large language models via OpenRouter. For each poetry option in the dataset, 13 different LLMs provide explanations of the couplet's meaning.
+
+The output is an enriched dataset containing both the original poetry and machine-generated explanations from each model, enabling analysis of how different LLMs interpret Persian literature.
+
+### Example
+
+For each poetry couplet, we ask 13 LLMs to interpret its meaning:
+
+**Input Poetry:**
+```
+طریق عشق پرآشوب و فتنه است ای دل - بیفتد آن که در این راه با شتاب رود
+```
+
+**Sample LLM Explanations:**
+- **GPT**: "This couplet warns that the path of love is turbulent and fraught with trials..."
+- **Claude**: "راه عشق پر از آشوب و فتنه است و کسی که با شتاب در این راه حرکت کند، دچار مشکل می‌شود..."
+- **DeepSeek**: (includes reasoning) "The verse cautions against rushing into love..."
+
+The script processes all 42 questions × 4 options = 168 couplets, generating explanations from 13 models concurrently.
+
+---
+
+## Experiment #5: Comprehensive Embedding Benchmark on Explanations
+
+This experiment creates a 2D matrix to evaluate:
+- **9 embedding models** (from exp-3)
+- **13 LLM explanation sources** (from exp-4)
+
+This produces **117 combinations** to determine which embedding models work best with which LLM-generated explanations.
+
+### Research Questions
+
+1. Which embedding models perform best overall on explanations?
+2. Which LLM's explanations are most effective for semantic similarity tasks?
+3. Are there specific embedding+LLM combinations that excel?
+4. Do explanations improve performance compared to raw poetry?
+
+For each combination, the benchmark:
+1. Loads explanations from a specific LLM
+2. Embeds those explanations using a specific embedding model
+3. Applies outlier detection (same algorithm as Experiment 2)
+4. Calculates accuracy
+
+Results are aggregated by embedding model and by explanation source, revealing which combinations work best for Persian poetry semantic similarity.
+
+![Comparison with Experiment 3](exp-5/comparison_with_exp3.png)
+
+---
+
+## Experiment #6: Large-Scale LLM Benchmark on Gherabat Dataset
+
+This experiment represents a significant expansion of Experiment 1, using a much larger dataset and improved methodology to evaluate 30 LLMs on Persian poetry semantic similarity tasks.
+
+### Dataset and Scale
+
+- **Questions**: 591 poetry outlier detection questions (vs 42 in exp-1)
+- **Source**: Gherabat book dataset with comprehensive answer keys
+- **Models**: 30 LLMs tested via OpenRouter API
+
+### Results
+
+The experiment tested models across multiple families including GPT, Gemini, Claude, DeepSeek, Qwen, LLaMA, and others. Google Gemini 2.5 Pro achieved the highest accuracy at 70%.
+
+![Model Accuracy Comparison](exp-6/analysis-outputs/model-accuracy.png)
+
+The analysis includes:
+- Model performance comparison across 30 LLMs
+- Question difficulty analysis
+- Model agreement and disagreement patterns
+- Semantic error pattern analysis
+- Statistical significance testing
 
 ---
 

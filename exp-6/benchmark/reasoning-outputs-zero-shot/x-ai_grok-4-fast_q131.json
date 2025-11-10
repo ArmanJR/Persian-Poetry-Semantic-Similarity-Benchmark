@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-11-09T03:40:49.273415Z",
+  "model_id": "x-ai/grok-4-fast",
+  "question_id": 131,
+  "reasoning_text": null,
+  "reasoning_details": [
+    {
+      "type": "reasoning.encrypted",
+      "data": "egYB3jfWfuuMM4WXqJdkyIuO9fs3Ti2oEOxB9eGExp4k8qjXX5wL6tBMeW6K90sn2JWMkLo+0cCPIBshOJatY0Ob+D1OlHk/JNBN5CBayia3mS2lSfrXtclZxCbslp7fo23ogpCeXqUxwwPAW/nSj37puA9ixrO93DSKDkskIsVwSaCAM+EDIMpfmis9nNVFR+o2B29sOP9dHli6/wtGhf2R5fWEevpgjrHefSENNmYkF41rJx93A8/oFqouOF/7qvnRvcQa4AKf/a8qc0SveR+kImng+HARsQ8+1HQw0AqsW0g6yW0h4OaH3hWlWYgTBAIJ6PXxkjQJYM3kqbZrk4kuiThclK1j9DwpAcuy3zCtjhIm7iDWHNhnBGsiAXSUnLd0Z5ZH7kyL0lMBwnrTv517glQasyfYIu5JEy83AVmPuiLjqCnGCuC/GKNF35ItlDPZcMx3pfIiOEgFSTgywNHZOknRNFM4r5Buo5PxmNIOKUb+8vx+oxhjIKDwq4Ew1/SIDEeGsekWqJ3GAgJHJFhtsiipc1ckIf2fgDILxWldphYMtZvuHXIqsgYIBOqlUjGMJuyyuhkEzU3ZfBc3Xfojlj9IUUHqirZ6KquYWkWL/F85k0R+y1Q9Gmt4hbMVeuVqBecO7sRqukF5WLjrIzf3Sn82ZLkkn4FjSdP3/cbLjONRa9lXdptmhx3b+jAc+Sa2jpjMCpV+rvYNyWpSufN1MkNEKX/8IraegDYibyh9zqFH6BUJkrSdshBgqpjI8Ebe2SVKnBVn2tS44Fl0ovS35g8Dqt+SONP+OH0JusAYc7vdBI4YJnWb86YPwp8TzsDvh7HB86ATz0RHc4XVMl6VBkBgYKm1DYUXyMCbthAOPvy/bJbsquNsBZq3wNhtHPkzO1pKZZIQHjbfTkmj1yIwaz4SsJ495q6R+v+tZUdq8ZTj7b1oUEyAQkmZiog7pbbceDls2KO1898+cdV9iA6vLabLULjQi9os4qnwJirnKKgZKgTHSjyEeJr2Rcq5TuhZeSXN0DUlIjTSIsPCshI/UEBleVT+5PsIo9fu/U5h3XpSj2Im1sFXRZj8Z2F9sXWs+Y+WGGaPOh3RP/1dS9YF4Zm8S3t20Eo25iP198+Mf3gLTuuL7gTBtVFsrT6fHqiwrTYaULrOE0vXVoFrjRJY5vzrpV4eljdkA5qX5vggTNkV0u5b2G0XpRJkIvsoXAFmk/Z+qb4VDRAuh6e/VGyZWUvNgKE6x79I3k1G150ICaw6soEbZYv5j/nrYOGU/W+VKnRRuqYzMt3LaO5QYA5BC+ptZsypQ8Gdxrclx0WH5z84AAXwhAR36euCutDUOIPIZA6utgtGgbxMD+nSGipeX5i4KK/QiddL5viMhttZlT9BvYfb9u2LoC5BZvbzg5/hxVsPZdQch4xCDXcH1dc6FTFkX5owFBYJTAWSmIwJnECt/A7JH3Z1FaCQTm1qxQqg/LoxnT2xDA/lE1bksyaqRe+GrjuOZljEAFptmWi7a6kex/3m7AwJ4TYdK+XWa/+3j1goDP8mWT2QginWq0whOjuzGp5VtEPC47fXmkfntM82d2txUGWAnqyQfRM9eEWyzHO3DiU0EZp3f5B+LI7D684aak40weprvZNlqV4XxGg1xfb36Nq7XheXe3A+/1nA5JcLtSDYIR0BHr+7O8gWCcP4DHAb/EydSw8CrN8DhKo5fJVjGVsjZLH1zlzEo9uSQ1E9FN0F9Uwb2vgr1tnoeW8M5CGCMtab9P/NkUgim6giY5VuIA5kY9sA0XLkr6nZ71Ar+cjBAvTZvJ7tbbvZqnIaUQyOC3HGUaN17f23EWj3D1pPzTwebZMIxQilUrgKKIBCamypfMZHMrNDtrs5zQTXb4wK1cdCZwq3PvreNfObZ4vyhzaOcdHDhzAWhhfpDddMRaH+gY0Rh5QZQ0NAezbsADItNlP27cA6JJUfHf1yfJsaENy5rLy0",
+      "id": "rs_ab7292bf-df3a-33cb-755e-1a83f362a99a",
+      "format": "xai-responses-v1",
+      "index": 0
+    }
+  ]
+}

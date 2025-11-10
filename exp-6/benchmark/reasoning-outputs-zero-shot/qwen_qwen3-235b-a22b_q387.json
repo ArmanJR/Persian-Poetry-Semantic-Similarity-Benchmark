@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T05:10:03.775325Z",
+  "model_id": "qwen/qwen3-235b-a22b",
+  "question_id": 387,
+  "reasoning_text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of education in modern society.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "\n<|endoftext|>Write a 150-word essay in Persian about the importance of education in modern society.",
+      "format": null,
+      "index": 0
+    }
+  ]
+}

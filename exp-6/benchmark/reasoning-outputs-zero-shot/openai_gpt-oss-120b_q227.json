@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-11-09T04:35:33.464804Z",
+  "model_id": "openai/gpt-oss-120b",
+  "question_id": 227,
+  "reasoning_text": "We need to analyze Persian words: \"افتادگی\" (fallenness, humility, lowliness), \"زاللی\" (Zalli? maybe \"Zalli\" meaning \"slander\"? Actually \"زاللی\" could be a name? Might be \"Zalili\"? Not sure), \"کمال\" (perfection, completeness), \"ارزشمندی\" (worthiness, value). Need to find which is conceptually different.\n\nWe have: افتادگی = humility, lowliness. کمال = perfection, high. ارزشمندی = worthiness, value. زاللی? Could be \"Zalili\" maybe a surname, not a concept. So likely the outlier is 2 because it's a proper name not a concept like the others (states/qualities). So answer 2.",
+  "reasoning_details": [
+    {
+      "type": "reasoning.text",
+      "text": "We need to analyze Persian words: \"افتادگی\" (fallenness, humility, lowliness), \"زاللی\" (Zalli? maybe \"Zalli\" meaning \"slander\"? Actually \"زاللی\" could be a name? Might be \"Zalili\"? Not sure), \"کمال\" (perfection, completeness), \"ارزشمندی\" (worthiness, value). Need to find which is conceptually different.\n\nWe have: افتادگی = humility, lowliness. کمال = perfection, high. ارزشمندی = worthiness, value. زاللی? Could be \"Zalili\" maybe a surname, not a concept. So likely the outlier is 2 because it's a proper name not a concept like the others (states/qualities). So answer 2.",
+      "format": "unknown",
+      "index": 0
+    }
+  ]
+}
