@@ -173,7 +173,7 @@ We then evaluated the models based on their accuracy in selecting the correct ou
 
 This experiment evaluates embedding models available through the OpenRouter API on the same outlier detection task. Unlike Experiment 2, which used locally-hosted models, this experiment tests cloud-based embeddings via API calls.
 
-The outlier detection algorithm is identical to Experiment 2 (centroid-based cosine similarity). Each model generates embeddings for the 4 poetry options, and the option with the lowest similarity to the centroid of the other three is predicted as the outlier.
+Each model generates embeddings for the 4 poetry options. The benchmark computes each option's average cosine similarity to the other three and predicts the option with the lowest average as the outlier.
 
 Results (ranked by accuracy):
 
@@ -181,12 +181,21 @@ Results (ranked by accuracy):
 |-------|--------------|---------|-------|
 | google/gemini-embedding-001 | 39.02 | 16 | 41 |
 | openai/text-embedding-3-large | 36.59 | 15 | 41 |
+| voyageai/voyage-4-large | 36.59 | 15 | 41 |
+| google/gemini-embedding-2 | 34.15 | 14 | 41 |
+| perplexity/pplx-embed-v1-0.6b | 34.15 | 14 | 41 |
 | mistralai/codestral-embed-2505 | 32.50 | 13 | 40 |
+| perplexity/pplx-embed-v1-4b | 31.71 | 13 | 41 |
+| sentence-transformers/all-minilm-l12-v2 | 31.71 | 13 | 41 |
+| sentence-transformers/paraphrase-minilm-l6-v2 | 31.71 | 13 | 41 |
 | qwen/qwen3-embedding-0.6b | 29.27 | 12 | 41 |
 | qwen/qwen3-embedding-8b | 29.27 | 12 | 41 |
 | openai/text-embedding-3-small | 26.83 | 11 | 41 |
 | openai/text-embedding-ada-002 | 24.39 | 10 | 41 |
+| voyageai/voyage-4 | 24.39 | 10 | 41 |
+| nvidia/nemotron-3-embed-1b:free | 21.95 | 9 | 41 |
 | qwen/qwen3-embedding-4b | 21.95 | 9 | 41 |
+| voyageai/voyage-4-lite | 21.95 | 9 | 41 |
 | mistralai/mistral-embed-2312 | 14.63 | 6 | 41 |
 
 ---

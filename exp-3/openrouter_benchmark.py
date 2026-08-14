@@ -1,517 +1,619 @@
-"""
-OpenRouter Embedding Models Benchmark for Persian Poetry Semantic Similarity
+"""Benchmark OpenRouter embedding models on Persian poetry similarity."""
 
-This script benchmarks various embedding models available through OpenRouter API
-on their ability to identify semantic outliers in Persian poetry couplets.
-"""
+from __future__ import annotations
 
+import argparse
+import base64
+import hashlib
 import json
+import logging
 import os
+import sys
 import time
-import numpy as np
-import requests
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple, Literal
-from sklearn.metrics.pairwise import cosine_similarity
+from typing import Any, Sequence
+
+import numpy as np
 import pandas as pd
+import requests
 from dotenv import load_dotenv
-from outlier_detection_methods import find_outlier as find_outlier_advanced
 
-# Load environment variables
-load_dotenv()
+from outlier_detection_methods import find_outlier
 
-# Configuration
-OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+LOGGER = logging.getLogger(__name__)
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+load_dotenv(PROJECT_ROOT / ".env")
+
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/embeddings"
-BENCHMARK_DATA_PATH = '../preprocess-data/benchmark_dataset.json'
-CACHE_DIR = 'openrouter_cache'
-RESULTS_CSV_PATH = 'openrouter_results.csv'
+BENCHMARK_DATA_PATH = PROJECT_ROOT / "preprocess-data" / "benchmark_dataset.json"
+CACHE_DIR = SCRIPT_DIR / "openrouter_cache"
+RESULTS_CSV_PATH = SCRIPT_DIR / "openrouter_results.csv"
 
-# Outlier detection configuration
-OUTLIER_METHOD = 'pairwise_avg'  # Options: 'centroid', 'pairwise_avg', 'max_distance_sum', 'euclidean', 'isolation'
-NORMALIZE_EMBEDDINGS = False  # Whether to L2-normalize embeddings before comparison
+OUTLIER_METHOD = "pairwise_avg"
+NORMALIZE_EMBEDDINGS = False
 
-# Embedding models to test (OpenRouter model IDs)
-EMBEDDING_MODELS = [
-    'qwen/qwen3-embedding-0.6b',
-    'mistralai/mistral-embed-2312',
-    'google/gemini-embedding-001',
-    'openai/text-embedding-ada-002',
-    'mistralai/codestral-embed-2505',
-    'openai/text-embedding-3-large',
-    'openai/text-embedding-3-small',
-    'qwen/qwen3-embedding-8b',
-    'qwen/qwen3-embedding-4b'
-]
+EXISTING_EMBEDDING_MODELS = (
+    "qwen/qwen3-embedding-0.6b",
+    "mistralai/mistral-embed-2312",
+    "google/gemini-embedding-001",
+    "openai/text-embedding-ada-002",
+    "mistralai/codestral-embed-2505",
+    "openai/text-embedding-3-large",
+    "openai/text-embedding-3-small",
+    "qwen/qwen3-embedding-8b",
+    "qwen/qwen3-embedding-4b",
+)
 
-# Rate limiting configuration
-RATE_LIMIT_DELAY = 0.1  # seconds between requests
+NEW_EMBEDDING_MODELS = (
+    "voyageai/voyage-4-lite",
+    "voyageai/voyage-4",
+    "voyageai/voyage-4-large",
+    "nvidia/nemotron-3-embed-1b:free",
+    "google/gemini-embedding-2",
+    "perplexity/pplx-embed-v1-4b",
+    "perplexity/pplx-embed-v1-0.6b",
+    "sentence-transformers/paraphrase-minilm-l6-v2",
+    "sentence-transformers/all-minilm-l12-v2",
+)
+
+EMBEDDING_MODELS = EXISTING_EMBEDDING_MODELS + NEW_EMBEDDING_MODELS
+
+RATE_LIMIT_DELAY = 0.1
 MAX_RETRIES = 5
-RETRY_DELAY = 2  # seconds
+RETRY_DELAY = 2.0
+REQUEST_TIMEOUT = 60
+PREFETCH_BATCH_SIZE = 32
+RETRYABLE_STATUS_CODES = frozenset({408, 409, 429, 500, 502, 503, 524, 529})
+RESULT_COLUMNS = (
+    "Model Name",
+    "Accuracy (%)",
+    "Correct",
+    "Total",
+    "Embedding Dim",
+)
 
 
 class OpenRouterEmbeddingClient:
-    """Client for OpenRouter Embeddings API with caching and rate limiting."""
+    """OpenRouter embeddings client with local caching and retry handling."""
 
-    def __init__(self, api_key: str, cache_dir: str = CACHE_DIR):
+    def __init__(
+        self,
+        api_key: str,
+        cache_dir: Path = CACHE_DIR,
+        session: requests.Session | None = None,
+    ) -> None:
         if not api_key:
-            raise ValueError("OPENROUTER_API_KEY not found. Please set it in .env file")
+            raise ValueError("OPENROUTER_API_KEY is required")
 
         self.api_key = api_key
         self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(exist_ok=True)
-        self.last_request_time = 0
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.session = session or requests.Session()
+        self.last_request_time = 0.0
+        self.unavailable_models: set[str] = set()
 
-    def _get_cache_key(self, model: str, text: str) -> str:
-        """Generate a cache key for the given model and text."""
-        import hashlib
-        text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
-        return f"{model.replace('/', '_')}_{text_hash}"
+    @staticmethod
+    def _get_cache_key(model: str, text: str) -> str:
+        text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        model_hash = hashlib.sha256(model.encode("utf-8")).hexdigest()[:16]
+        return f"{model_hash}_{text_hash}"
 
     def _get_cache_path(self, cache_key: str) -> Path:
-        """Get the cache file path for a cache key."""
         return self.cache_dir / f"{cache_key}.json"
 
-    def _load_from_cache(self, cache_key: str) -> Optional[List[float]]:
-        """Load embedding from cache if available."""
+    def _load_from_cache(self, cache_key: str) -> list[float] | None:
         cache_path = self._get_cache_path(cache_key)
-        if cache_path.exists():
-            try:
-                with open(cache_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    return data['embedding']
-            except Exception as e:
-                print(f"Warning: Failed to load from cache: {e}")
-        return None
+        if not cache_path.exists():
+            return None
 
-    def _save_to_cache(self, cache_key: str, embedding: List[float]):
-        """Save embedding to cache."""
+        try:
+            with cache_path.open("r", encoding="utf-8") as cache_file:
+                data = json.load(cache_file)
+            embedding = data["embedding"]
+            if not isinstance(embedding, list) or not embedding:
+                raise ValueError("cached embedding is not a non-empty list")
+            return embedding
+        except (
+            OSError,
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            LOGGER.warning("Could not read embedding cache %s: %s", cache_path, error)
+            return None
+
+    def _save_to_cache(self, cache_key: str, embedding: list[float]) -> None:
         cache_path = self._get_cache_path(cache_key)
         try:
-            with open(cache_path, 'w', encoding='utf-8') as f:
-                json.dump({'embedding': embedding}, f)
-        except Exception as e:
-            print(f"Warning: Failed to save to cache: {e}")
+            with cache_path.open("w", encoding="utf-8") as cache_file:
+                json.dump({"embedding": embedding}, cache_file)
+        except OSError as error:
+            LOGGER.warning("Could not write embedding cache %s: %s", cache_path, error)
 
-    def _rate_limit(self):
-        """Implement rate limiting between requests."""
-        current_time = time.time()
-        time_since_last_request = current_time - self.last_request_time
-        if time_since_last_request < RATE_LIMIT_DELAY:
-            time.sleep(RATE_LIMIT_DELAY - time_since_last_request)
-        self.last_request_time = time.time()
+    def _rate_limit(self) -> None:
+        elapsed = time.monotonic() - self.last_request_time
+        if elapsed < RATE_LIMIT_DELAY:
+            time.sleep(RATE_LIMIT_DELAY - elapsed)
+        self.last_request_time = time.monotonic()
 
-    def get_embedding(self, text: str, model: str, use_cache: bool = True) -> Optional[List[float]]:
-        """
-        Get embedding for a text using OpenRouter API.
+    @staticmethod
+    def _decode_embedding(value: Any) -> list[float]:
+        if isinstance(value, str):
+            decoded = base64.b64decode(value, validate=True)
+            return np.frombuffer(decoded, dtype=np.float32).tolist()
+        if not isinstance(value, list) or not value:
+            raise ValueError("embedding is not a non-empty list or base64 string")
+        return value
 
-        Args:
-            text: The text to embed
-            model: The model ID to use
-            use_cache: Whether to use caching
+    @staticmethod
+    def _retry_wait_seconds(response: requests.Response, attempt: int) -> float:
+        retry_after = response.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return min(max(float(retry_after), 0.0), 60.0)
+            except ValueError:
+                LOGGER.debug("Ignoring non-numeric Retry-After header: %s", retry_after)
+        return min(RETRY_DELAY * (2**attempt), 60.0)
 
-        Returns:
-            List of floats representing the embedding, or None if failed
-        """
-        # Check cache first
-        if use_cache:
-            cache_key = self._get_cache_key(model, text)
-            cached_embedding = self._load_from_cache(cache_key)
-            if cached_embedding is not None:
-                return cached_embedding
+    def _request_embeddings(
+        self, texts: Sequence[str], model: str
+    ) -> list[list[float]] | None:
+        if model in self.unavailable_models:
+            LOGGER.debug("Skipping request for unavailable model %s", model)
+            return None
 
-        # Make API request with retries
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "input": list(texts),
+            "model": model,
+            "encoding_format": "float",
+        }
+
         for attempt in range(MAX_RETRIES):
             try:
                 self._rate_limit()
-
-                headers = {
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                }
-
-                payload = {
-                    "input": text,
-                    "model": model
-                }
-
-                response = requests.post(
+                LOGGER.debug(
+                    "Requesting %d embedding(s) from %s (attempt %d/%d)",
+                    len(texts),
+                    model,
+                    attempt + 1,
+                    MAX_RETRIES,
+                )
+                response = self.session.post(
                     OPENROUTER_API_URL,
                     headers=headers,
                     json=payload,
-                    timeout=60  # Increased timeout to 60 seconds
+                    timeout=REQUEST_TIMEOUT,
                 )
+            except requests.RequestException as error:
+                LOGGER.warning(
+                    "Embedding request for %s failed on attempt %d/%d: %s",
+                    model,
+                    attempt + 1,
+                    MAX_RETRIES,
+                    error,
+                )
+                if attempt == MAX_RETRIES - 1:
+                    return None
+                wait_seconds = min(RETRY_DELAY * (2**attempt), 60.0)
+                LOGGER.info("Retrying %s in %.1f seconds", model, wait_seconds)
+                time.sleep(wait_seconds)
+                continue
 
-                if response.status_code == 200:
-                    data = response.json()
-                    if 'data' in data and len(data['data']) > 0:
-                        embedding = data['data'][0]['embedding']
-
-                        # Handle base64 encoded embeddings
-                        if isinstance(embedding, str):
-                            import base64
-                            decoded = base64.b64decode(embedding)
-                            embedding = np.frombuffer(decoded, dtype=np.float32).tolist()
-
-                        # Save to cache
-                        if use_cache:
-                            self._save_to_cache(cache_key, embedding)
-
-                        return embedding
-                    else:
-                        print(f"Warning: Unexpected response format for model {model}")
-                        return None
-
-                elif response.status_code == 429:  # Rate limit
-                    wait_time = RETRY_DELAY * (attempt + 1)
-                    print(f"Rate limited. Waiting {wait_time}s before retry...")
-                    time.sleep(wait_time)
-                    continue
-
-                elif response.status_code == 402:  # Payment required
-                    print(f"Error: Insufficient credits for model {model}")
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()["data"]
+                    if len(response_data) != len(texts):
+                        raise ValueError(
+                            f"expected {len(texts)} embeddings, received {len(response_data)}"
+                        )
+                    ordered_data = sorted(
+                        enumerate(response_data),
+                        key=lambda pair: pair[1].get("index", pair[0]),
+                    )
+                    embeddings = [
+                        self._decode_embedding(item["embedding"])
+                        for _, item in ordered_data
+                    ]
+                    if len({len(embedding) for embedding in embeddings}) != 1:
+                        raise ValueError(
+                            "response contains inconsistent embedding dimensions"
+                        )
+                    return embeddings
+                except (
+                    KeyError,
+                    TypeError,
+                    ValueError,
+                    json.JSONDecodeError,
+                ) as error:
+                    LOGGER.error("Invalid embedding response from %s: %s", model, error)
                     return None
 
-                else:
-                    print(f"Error: API returned status {response.status_code}: {response.text}")
-                    if attempt < MAX_RETRIES - 1:
-                        time.sleep(RETRY_DELAY)
-                        continue
+            response_excerpt = response.text.replace("\n", " ")[:1_000]
+            if response.status_code in RETRYABLE_STATUS_CODES:
+                if attempt == MAX_RETRIES - 1:
+                    LOGGER.error(
+                        "OpenRouter returned status %d for %s after %d attempts. "
+                        "Response: %s",
+                        response.status_code,
+                        model,
+                        MAX_RETRIES,
+                        response_excerpt,
+                    )
                     return None
+                wait_seconds = self._retry_wait_seconds(response, attempt)
+                LOGGER.warning(
+                    "OpenRouter returned retryable status %d for %s on attempt "
+                    "%d/%d; retrying in %.1f seconds. Response: %s",
+                    response.status_code,
+                    model,
+                    attempt + 1,
+                    MAX_RETRIES,
+                    wait_seconds,
+                    response_excerpt,
+                )
+                time.sleep(wait_seconds)
+                continue
 
-            except requests.exceptions.Timeout:
-                print(f"Timeout on attempt {attempt + 1}/{MAX_RETRIES}")
-                if attempt < MAX_RETRIES - 1:
-                    time.sleep(RETRY_DELAY)
-                    continue
-                return None
-
-            except Exception as e:
-                print(f"Error getting embedding: {e}")
-                if attempt < MAX_RETRIES - 1:
-                    time.sleep(RETRY_DELAY)
-                    continue
-                return None
+            LOGGER.error(
+                "OpenRouter rejected model %s with status %d. Response: %s",
+                model,
+                response.status_code,
+                response_excerpt,
+            )
+            self.unavailable_models.add(model)
+            return None
 
         return None
 
-    def get_embeddings_batch(self, texts: List[str], model: str, use_cache: bool = True) -> Optional[np.ndarray]:
-        """
-        Get embeddings for multiple texts.
+    def get_embeddings_batch(
+        self,
+        texts: Sequence[str],
+        model: str,
+        use_cache: bool = True,
+    ) -> np.ndarray | None:
+        """Return embeddings in input order, requesting all cache misses together."""
+        if not texts:
+            LOGGER.error("Cannot request an empty embedding batch for %s", model)
+            return None
 
-        Args:
-            texts: List of texts to embed
-            model: The model ID to use
-            use_cache: Whether to use caching
+        cache_keys = [self._get_cache_key(model, text) for text in texts]
+        embeddings: list[list[float] | None] = [None] * len(texts)
+        missing_indices: list[int] = []
 
-        Returns:
-            NumPy array of embeddings, or None if any failed
-        """
-        embeddings = []
-        embedding_dim = None
+        for index, cache_key in enumerate(cache_keys):
+            cached_embedding = self._load_from_cache(cache_key) if use_cache else None
+            if cached_embedding is None:
+                missing_indices.append(index)
+            else:
+                embeddings[index] = cached_embedding
 
-        for idx, text in enumerate(texts):
-            print(f".", end='', flush=True)  # Progress indicator
-            embedding = self.get_embedding(text, model, use_cache)
-            if embedding is None:
-                print(f"\n  Failed to get embedding for option {idx + 1}", flush=True)
+        if missing_indices:
+            missing_texts = [texts[index] for index in missing_indices]
+            requested_embeddings = self._request_embeddings(missing_texts, model)
+            if requested_embeddings is None:
                 return None
 
-            # Validate dimension consistency
-            if embedding_dim is None:
-                embedding_dim = len(embedding)
-            elif len(embedding) != embedding_dim:
-                print(f"\n  Error: Inconsistent embedding dimensions ({len(embedding)} vs {embedding_dim})", flush=True)
-                return None
+            for index, embedding in zip(
+                missing_indices, requested_embeddings, strict=True
+            ):
+                embeddings[index] = embedding
+                if use_cache:
+                    self._save_to_cache(cache_keys[index], embedding)
 
-            embeddings.append(embedding)
+        if any(embedding is None for embedding in embeddings):
+            LOGGER.error("Failed to assemble a complete embedding batch for %s", model)
+            return None
 
-        return np.array(embeddings)
+        embedding_dimensions = {
+            len(embedding) for embedding in embeddings if embedding is not None
+        }
+        if len(embedding_dimensions) != 1:
+            LOGGER.error(
+                "Inconsistent cached embedding dimensions for %s: %s",
+                model,
+                sorted(embedding_dimensions),
+            )
+            return None
+
+        embedding_array = np.asarray(embeddings, dtype=np.float64)
+        if embedding_array.ndim != 2 or embedding_array.shape[0] != len(texts):
+            LOGGER.error(
+                "Invalid embedding array shape for %s: %s",
+                model,
+                embedding_array.shape,
+            )
+            return None
+        return embedding_array
+
+    def close(self) -> None:
+        self.session.close()
 
 
-def find_outlier_index(embeddings: np.ndarray) -> int:
-    """
-    Identifies the index of the outlier embedding based on lowest similarity
-    to the centroid of the other embeddings.
+def load_benchmark_dataset(path: Path) -> list[dict[str, Any]]:
+    """Load and validate the benchmark dataset."""
+    if not path.exists():
+        raise FileNotFoundError(f"Benchmark data file not found at {path}")
 
-    Args:
-        embeddings: A numpy array of 4 embedding vectors.
+    with path.open("r", encoding="utf-8") as data_file:
+        dataset = json.load(data_file)
 
-    Returns:
-        The index (0-3) of the predicted outlier embedding, or -1 if prediction fails.
-    """
-    if not isinstance(embeddings, np.ndarray):
-        embeddings = np.array(embeddings)
+    if not isinstance(dataset, list) or not dataset:
+        raise ValueError("Benchmark dataset must be a non-empty list")
 
-    if len(embeddings) != 4 or embeddings.ndim != 2:
-        print(f"Warning: Invalid input shape {embeddings.shape}")
-        return -1
-
-    similarity_scores = []
-
-    for i in range(4):
-        # Get all other embeddings
-        others = np.delete(embeddings, i, axis=0)
-        if others.size == 0:
-            similarity_scores.append(-np.inf)
+    invalid_items: list[Any] = []
+    for index, item in enumerate(dataset):
+        if not isinstance(item, dict):
+            invalid_items.append(index)
             continue
+        if (
+            not isinstance(item.get("options"), list)
+            or len(item["options"]) != 4
+            or item.get("correct_answer_index") not in range(4)
+        ):
+            invalid_items.append(item.get("id", index))
+    if invalid_items:
+        raise ValueError(f"Invalid benchmark items: {invalid_items}")
 
-        # Calculate centroid of others
-        centroid = np.mean(others, axis=0, keepdims=True)
-        current = embeddings[i].reshape(1, -1)
-
-        # Calculate cosine similarity
-        similarity = cosine_similarity(current, centroid)[0][0]
-        similarity_scores.append(similarity)
-
-    # Check for valid similarities
-    if all(score == -np.inf for score in similarity_scores):
-        print("Warning: No valid similarities calculated")
-        return -1
-
-    # Return index with minimum similarity (most dissimilar = outlier)
-    return int(np.argmin(similarity_scores))
-
-
-def load_benchmark_dataset(path: str) -> List[Dict]:
-    """Load the benchmark dataset from JSON file."""
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Benchmark data file not found at '{path}'")
-
-    with open(path, 'r', encoding='utf-8') as f:
-        dataset = json.load(f)
-
-    if not dataset:
-        raise ValueError("Loaded dataset is empty")
-
+    LOGGER.info("Loaded %d benchmark questions from %s", len(dataset), path)
     return dataset
 
 
 def benchmark_model(
     client: OpenRouterEmbeddingClient,
     model: str,
-    dataset: List[Dict],
-    verbose: bool = True
-) -> Tuple[float, int, int, Optional[int]]:
-    """
-    Benchmark a single model on the dataset.
-
-    Args:
-        client: OpenRouter client instance
-        model: Model ID to test
-        dataset: Benchmark dataset
-        verbose: Whether to print progress
-
-    Returns:
-        Tuple of (accuracy, correct_predictions, total_valid, embedding_dimension)
-    """
-    if verbose:
-        print(f"\n{'='*60}")
-        print(f"Testing Model: {model}")
-        print(f"Method: {OUTLIER_METHOD}" + (f" (normalized)" if NORMALIZE_EMBEDDINGS else ""))
-        print(f"{'='*60}")
-
+    dataset: Sequence[dict[str, Any]],
+) -> dict[str, Any]:
+    """Benchmark one model and return a CSV-compatible result row."""
+    LOGGER.info(
+        "Starting model %s with method=%s normalize=%s questions=%d",
+        model,
+        OUTLIER_METHOD,
+        NORMALIZE_EMBEDDINGS,
+        len(dataset),
+    )
+    prefetch_model_embeddings(client, model, dataset)
     correct_predictions = 0
     prediction_failures = 0
-    total_questions = len(dataset)
-    embedding_dimension = None  # Track embedding dimension
+    embedding_dimension: int | None = None
 
-    for i, item in enumerate(dataset):
-        question_id = item.get('id', f'index_{i}')
-
-        if verbose:
-            print(f"Processing question {i + 1}/{total_questions} (ID: {question_id})...", end='', flush=True)
-
-        # Validate question data
-        if 'options' not in item or len(item['options']) != 4:
+    for question_number, item in enumerate(dataset, start=1):
+        question_id = item.get("id", question_number - 1)
+        option_embeddings = client.get_embeddings_batch(item["options"], model)
+        if option_embeddings is None:
             prediction_failures += 1
-            if verbose:
-                print(" SKIPPED (invalid options)")
-            continue
-        if 'correct_answer_index' not in item:
-            prediction_failures += 1
-            if verbose:
-                print(" SKIPPED (missing answer)")
+            LOGGER.error(
+                "Model %s failed question %d/%d (id=%s): embeddings unavailable",
+                model,
+                question_number,
+                len(dataset),
+                question_id,
+            )
             continue
 
-        options_text = item['options']
-        true_outlier_index = item['correct_answer_index']
+        if embedding_dimension is None:
+            embedding_dimension = int(option_embeddings.shape[1])
+            LOGGER.info("Model %s embedding dimension: %d", model, embedding_dimension)
 
-        # Get embeddings for all options
         try:
-            option_embeddings = client.get_embeddings_batch(options_text, model)
-
-            if option_embeddings is None:
-                prediction_failures += 1
-                if verbose:
-                    print(f" FAILED (could not get embeddings)")
-                continue
-
-            # Validate embedding shape
-            if option_embeddings.shape[0] != 4:
-                prediction_failures += 1
-                if verbose:
-                    print(f" FAILED (invalid shape)")
-                continue
-
-            # Track embedding dimension (log on first successful question)
-            if embedding_dimension is None and option_embeddings.shape[1] > 0:
-                embedding_dimension = option_embeddings.shape[1]
-                if verbose:
-                    print(f" [dim={embedding_dimension}]", end='', flush=True)
-
-        except Exception as e:
-            if verbose:
-                print(f" ERROR: {str(e)[:100]}")
-            prediction_failures += 1
-            continue
-
-        # Predict the outlier using configured method
-        try:
-            predicted_outlier_index = find_outlier_advanced(
+            predicted_index = find_outlier(
                 option_embeddings,
                 method=OUTLIER_METHOD,
-                normalize=NORMALIZE_EMBEDDINGS
+                normalize=NORMALIZE_EMBEDDINGS,
             )
-        except Exception as e:
-            if verbose:
-                print(f" ERROR in outlier detection: {str(e)[:50]}")
+        except (TypeError, ValueError) as error:
             prediction_failures += 1
+            LOGGER.exception(
+                "Outlier detection failed for model %s question id=%s: %s",
+                model,
+                question_id,
+                error,
+            )
             continue
 
-        if predicted_outlier_index == -1:
-            prediction_failures += 1
-            if verbose:
-                print(" FAILED (outlier detection)")
-        elif predicted_outlier_index == true_outlier_index:
-            correct_predictions += 1
-            if verbose:
-                print(" ✓ CORRECT")
+        true_index = item["correct_answer_index"]
+        is_correct = predicted_index == true_index
+        correct_predictions += int(is_correct)
+        LOGGER.info(
+            "Model %s question %d/%d id=%s predicted=%d expected=%d result=%s",
+            model,
+            question_number,
+            len(dataset),
+            question_id,
+            predicted_index,
+            true_index,
+            "correct" if is_correct else "incorrect",
+        )
+
+    effective_total = len(dataset) - prediction_failures
+    accuracy = correct_predictions / effective_total * 100 if effective_total else 0.0
+    LOGGER.info(
+        "Completed model %s: accuracy=%.2f%% correct=%d total=%d failures=%d",
+        model,
+        accuracy,
+        correct_predictions,
+        effective_total,
+        prediction_failures,
+    )
+    return {
+        "Model Name": model,
+        "Accuracy (%)": accuracy,
+        "Correct": correct_predictions,
+        "Total": effective_total,
+        "Embedding Dim": embedding_dimension,
+    }
+
+
+def prefetch_model_embeddings(
+    client: OpenRouterEmbeddingClient,
+    model: str,
+    dataset: Sequence[dict[str, Any]],
+    batch_size: int = PREFETCH_BATCH_SIZE,
+) -> None:
+    """Populate the cache in bounded batches to minimize provider round trips."""
+    if batch_size < 1:
+        raise ValueError("Prefetch batch size must be positive")
+
+    texts = [option for item in dataset for option in item["options"]]
+    batch_count = (len(texts) + batch_size - 1) // batch_size
+    LOGGER.info(
+        "Prefetching %d texts for %s in %d batch(es) of at most %d",
+        len(texts),
+        model,
+        batch_count,
+        batch_size,
+    )
+    for batch_number, start in enumerate(range(0, len(texts), batch_size), start=1):
+        batch = texts[start : start + batch_size]
+        embeddings = client.get_embeddings_batch(batch, model)
+        if embeddings is None:
+            LOGGER.warning(
+                "Prefetch batch %d/%d failed for %s; question-level requests will retry",
+                batch_number,
+                batch_count,
+                model,
+            )
         else:
-            if verbose:
-                print(" ✗ INCORRECT")
-
-    # Calculate accuracy
-    effective_total = total_questions - prediction_failures
-    accuracy = (correct_predictions / effective_total * 100) if effective_total > 0 else 0.0
-
-    if verbose:
-        print(f"\nResults for {model}:")
-        if embedding_dimension:
-            print(f"  Embedding dimension: {embedding_dimension}")
-        print(f"  Correct: {correct_predictions}/{effective_total}")
-        print(f"  Accuracy: {accuracy:.2f}%")
-        if prediction_failures > 0:
-            print(f"  Failed/Skipped: {prediction_failures}")
-
-    return accuracy, correct_predictions, effective_total, embedding_dimension
+            LOGGER.info(
+                "Prefetch batch %d/%d complete for %s (%d texts)",
+                batch_number,
+                batch_count,
+                model,
+                len(batch),
+            )
 
 
-def main():
-    """Main benchmark execution function."""
-    print("="*80)
-    print("OpenRouter Embedding Models Benchmark")
-    print("Persian Poetry Semantic Similarity")
-    print("="*80)
-    print("\nTip: Press Ctrl+C to interrupt and save partial results")
+def save_results(
+    new_results: Sequence[dict[str, Any]],
+    results_path: Path,
+    merge_existing: bool = True,
+) -> pd.DataFrame:
+    """Save results, replacing rows for rerun models while preserving other rows."""
+    results_frame = pd.DataFrame(new_results, columns=RESULT_COLUMNS)
+    if merge_existing and results_path.exists():
+        existing_frame = pd.read_csv(results_path, encoding="utf-8")
+        missing_columns = set(RESULT_COLUMNS) - set(existing_frame.columns)
+        if missing_columns:
+            raise ValueError(
+                f"Existing results file is missing columns: {sorted(missing_columns)}"
+            )
+        results_frame = pd.concat(
+            [existing_frame.loc[:, RESULT_COLUMNS], results_frame],
+            ignore_index=True,
+        )
 
-    # Validate API key
+    results_frame = (
+        results_frame.drop_duplicates(subset=["Model Name"], keep="last")
+        .sort_values(
+            by=["Accuracy (%)", "Model Name"],
+            ascending=[False, True],
+        )
+        .reset_index(drop=True)
+    )
+    results_frame.to_csv(results_path, index=False, encoding="utf-8")
+    LOGGER.info("Saved %d model results to %s", len(results_frame), results_path)
+    return results_frame
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--models",
+        nargs="+",
+        default=list(EMBEDDING_MODELS),
+        help="OpenRouter model IDs to benchmark (default: all configured models)",
+    )
+    parser.add_argument(
+        "--replace-results",
+        action="store_true",
+        help="Replace the results CSV instead of merging rerun model rows",
+    )
+    parser.add_argument(
+        "--log-level",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR"),
+        default="INFO",
+    )
+    return parser.parse_args(argv)
+
+
+def configure_logging(level: str) -> None:
+    logging.basicConfig(
+        level=getattr(logging, level),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
+    configure_logging(args.log_level)
+
     if not OPENROUTER_API_KEY:
-        print("\nError: OPENROUTER_API_KEY not found!")
-        print("Please create a .env file with your OpenRouter API key:")
-        print("  OPENROUTER_API_KEY=your_api_key_here")
-        print("\nYou can get an API key from: https://openrouter.ai/keys")
-        return
+        LOGGER.error(
+            "OPENROUTER_API_KEY is missing; add it to %s",
+            PROJECT_ROOT / ".env",
+        )
+        return 2
 
-    # Load dataset
-    print(f"\nLoading benchmark dataset from: {BENCHMARK_DATA_PATH}")
     try:
         dataset = load_benchmark_dataset(BENCHMARK_DATA_PATH)
-        print(f"Successfully loaded {len(dataset)} questions")
-    except Exception as e:
-        print(f"Error loading dataset: {e}")
-        return
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+        LOGGER.exception("Could not load benchmark dataset: %s", error)
+        return 2
 
-    # Initialize client
-    print(f"\nInitializing OpenRouter client...")
-    print(f"Cache directory: {CACHE_DIR}")
+    LOGGER.info(
+        "Starting Experiment #3 for %d model(s); cache=%s",
+        len(args.models),
+        CACHE_DIR,
+    )
     client = OpenRouterEmbeddingClient(OPENROUTER_API_KEY, CACHE_DIR)
-
-    # Run benchmarks
-    results = {}
-
-    print(f"\n{'='*80}")
-    print(f"Starting benchmark for {len(EMBEDDING_MODELS)} models")
-    print(f"{'='*80}")
+    results: list[dict[str, Any]] = []
+    interrupted = False
 
     try:
-        for idx, model in enumerate(EMBEDDING_MODELS, 1):
-            print(f"\n[{idx}/{len(EMBEDDING_MODELS)}] Testing: {model}")
-
-            try:
-                accuracy, correct, total, dimension = benchmark_model(client, model, dataset, verbose=True)
-                results[model] = {
-                    'accuracy': accuracy,
-                    'correct': correct,
-                    'total': total,
-                    'dimension': dimension
-                }
-            except KeyboardInterrupt:
-                print("\n\n⚠️  Interrupted by user!")
-                raise
-            except Exception as e:
-                print(f"Error benchmarking {model}: {e}")
-                results[model] = {
-                    'accuracy': 0.0,
-                    'correct': 0,
-                    'total': 0,
-                    'dimension': None
-                }
+        for model_number, model in enumerate(args.models, start=1):
+            LOGGER.info(
+                "Benchmarking model %d/%d: %s",
+                model_number,
+                len(args.models),
+                model,
+            )
+            results.append(benchmark_model(client, model, dataset))
     except KeyboardInterrupt:
-        print("\n\n" + "="*80)
-        print("Benchmark interrupted by user")
-        print("Saving partial results...")
-        print("="*80)
-
-    # Process and save results
-    print("\n" + "="*80)
-    print("Benchmark Complete - Results Summary")
-    print("="*80)
+        interrupted = True
+        LOGGER.warning("Benchmark interrupted; saving completed model results")
+    finally:
+        client.close()
 
     if not results:
-        print("No results generated.")
-        return
+        LOGGER.error("No completed model results to save")
+        return 130 if interrupted else 1
 
-    # Create DataFrame
-    results_data = []
-    for model, data in results.items():
-        results_data.append({
-            'Model Name': model,
-            'Accuracy (%)': data['accuracy'],
-            'Correct': data['correct'],
-            'Total': data['total'],
-            'Embedding Dim': data.get('dimension', 'N/A')
-        })
-
-    results_df = pd.DataFrame(results_data)
-    results_df = results_df.sort_values(by='Accuracy (%)', ascending=False).reset_index(drop=True)
-
-    # Print results table
-    print("\n" + results_df.to_string(index=False))
-
-    # Save to CSV
     try:
-        results_df.to_csv(RESULTS_CSV_PATH, index=False, encoding='utf-8')
-        print(f"\nResults saved to: {RESULTS_CSV_PATH}")
-    except Exception as e:
-        print(f"Error saving results to CSV: {e}")
+        results_frame = save_results(
+            results,
+            RESULTS_CSV_PATH,
+            merge_existing=not args.replace_results,
+        )
+    except (OSError, ValueError, pd.errors.ParserError) as error:
+        LOGGER.exception("Could not save benchmark results: %s", error)
+        return 1
 
-    # Print cost information
-    print("\n" + "="*80)
-    print("Note: Check your OpenRouter dashboard for cost information:")
-    print("https://openrouter.ai/activity")
-    print("="*80)
+    LOGGER.info("Benchmark results:\n%s", results_frame.to_string(index=False))
+    incomplete_models = [
+        result["Model Name"] for result in results if result["Total"] != len(dataset)
+    ]
+    if incomplete_models:
+        LOGGER.error("Models with incomplete evaluations: %s", incomplete_models)
+        return 1
+    return 130 if interrupted else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
